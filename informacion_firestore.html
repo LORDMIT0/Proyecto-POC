@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema POS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #ffffff;
+            color: #212529;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 40px, 0);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+        .animate-fadeInUp {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+        .shake {
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        .btn-custom {
+            position: relative;
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+        .btn-custom::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, .5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 1;
+            }
+            20% {
+                transform: scale(25, 25);
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(40, 40);
+            }
+        }
+        .btn-custom:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
+        }
+        .header {
+            background: rgba(255, 0, 0, 0.8);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .nav-pills .nav-link {
+            color: #212529;
+            border-radius: 0.25rem;
+            transition: all 0.3s ease;
+        }
+        .nav-pills .nav-link.active {
+            background-color: rgba(255, 0, 0, 0.8);
+            color: white;
+        }
+        .table {
+            background-color: #ffffff;
+            border-radius: 0.25rem;
+            overflow: hidden;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            border-radius: 0.25rem;
+        }
+        body.dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        body.dark-mode .card {
+            background-color: #1e1e1e;
+            box-shadow: 0 2px 4px rgba(255,255,255,0.1);
+        }
+        body.dark-mode .header {
+            background: rgba(139, 0, 0, 0.8);
+        }
+        body.dark-mode .nav-pills .nav-link {
+            color: #e0e0e0;
+        }
+        body.dark-mode .nav-pills .nav-link.active {
+            background-color: rgba(139, 0, 0, 0.8);
+        }
+        body.dark-mode .table {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+        }
+        body.dark-mode .modal-content {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+        }
+        body.dark-mode .btn-custom {
+            background-color: #3700B3;
+            color: #e0e0e0;
+        }
+        body.dark-mode .form-control {
+            background-color: #2c2c2c;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+        body.dark-mode .form-control:focus {
+            background-color: #3c3c3c;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="row header mb-4 p-3 text-white animate-fadeInUp">
+            <div class="col">
+                <img src="COTOLOGO.png" alt="Logo" class="me-2" style="height: 40px;"> 
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-custom" id="perfilBtn">Usuario</button>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-custom" id="modoOscuroBtn">🌙</button>
+            </div>
+        </header>
+
+        <main class="row animate-fadeInUp">
+            <nav class="col-sm-3">
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#cobro">Cobro</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#historial">Historial de Transacciones</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#estadisticas">Estadísticas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#productos">Ver y Modificar Productos</a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="col-sm-9">
+                <div class="tab-content">
+                    <div class="tab-pane active" id="cobro">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Búsqueda de Carrito</h5>
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control" id="buscarCarrito" placeholder="Buscar carrito por ID">
+                                    <button class="btn btn-custom" id="buscarBtn">Buscar</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="carritoInfo" class="card mb-4" style="display: none;">
+                            <div class="card-body">
+                                <p><strong>ID del Carrito:</strong> <span id="carritoId"></span></p>
+                                <div id="elementosCarrito"></div>
+                                <p class="mt-3"><strong>Cantidad total de productos:</strong> <span id="cantidadTotal"></span></p>
+                                <h4 class="mt-3">Monto Total: $<span id="montoTotal">0.00</span></h4>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Acciones</h5>
+                                <button class="btn btn-custom me-2" id="descuentoBtn">Aplicar Descuento</button>
+                                <button class="btn btn-custom" id="finalizarBtn">Finalizar Transacción</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="historial">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Historial de Transacciones</h5>
+                                <div id="historialTransacciones"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="estadisticas">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Estadísticas de Ventas</h5>
+                                <div id="estadisticasVentas"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="productos">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Productos</h5>
+                                <div id="productosGrid" class="row mt-3">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="descuentoModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Aplicar Descuento</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="porcentajeDescuento" class="form-label">Porcentaje de Descuento</label>
+                            <input type="number" class="form-control" id="porcentajeDescuento">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-custom" id="aplicarDescuentoBtn">Aplicar Descuento</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="perfilModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Perfil de Usuario</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body" id="perfilInfo">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editarProductoModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Producto</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editarProductoForm">
+                            <input type="hidden" id="editProductoId">
+                            <div class="mb-3">
+                                <label for="editNombre" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="editNombre">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editPrecio" class="form-label">Precio</label>
+                                <input type="number" class="form-control" id="editPrecio">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editOferta" class="form-label">Oferta (%)</label>
+                                <input type="number" class="form-control" id="editOferta">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editCodigo" class="form-label">Código de Barras</label>
+                                <input type="text" class="form-control" id="editCodigo">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-custom" id="guardarCambiosBtn">Guardar Cambios</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyABlCJSWYwDFEPOM-aN4wbgKT3HF1PVFqc",
+            authDomain: "proyecto-arduino2.firebaseapp.com",
+            databaseURL: "https://proyecto-arduino2-default-rtdb.firebaseio.com",
+            projectId: "proyecto-arduino2",
+            storageBucket: "proyecto-arduino2.appspot.com",
+            messagingSenderId: "790219379077",
+            appId: "1:790219379077:web:2584aa5b00cfa15dbd34ec",
+            measurementId: "G-DS7PPVL470"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        let usuarioActual = null;
+        let carritos = [];
+        let carritoSeleccionado = null;
+        let montoTotal = 0;
+        let productos = [];
+
+        function $(id) { return document.getElementById(id); }
+
+        auth.onAuthStateChanged((usuario) => {
+            if (usuario) {
+                usuarioActual = usuario;
+                cargarPerfilUsuario(usuario.uid);
+                cargarCarritos();
+            } else {
+                window.location.href = 'pagina_de_inicio_de_sesion.html';
+            }
+        });
+
+        async function cargarPerfilUsuario(uid) {
+            try {
+                const docUsuario = await db.collection("users").doc(uid).get();
+                if (docUsuario.exists) {
+                    const datos = docUsuario.data();
+                    $('perfilBtn').textContent = datos.name;
+                    $('perfilInfo').innerHTML = `
+                        <p><strong>Nombre:</strong> ${datos.name}</p>
+                        <p><strong>Email:</strong> ${datos.email}</p>
+                        <p><strong>Rol:</strong> ${datos.role}</p>
+                    `;
+                    actualizarMenuPorRol(datos.role);
+                }
+            } catch (error) {
+                console.error("Error al cargar el perfil del usuario:", error);
+                alert("Error al cargar el perfil del usuario. Por favor, intente de nuevo.");
+            }
+        }
+
+        async function cargarCarritos() {
+            try {
+                const snapshot = await db.collection("Carritos").get();
+                carritos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            } catch (error) {
+                console.error("Error al cargar los carritos:", error);
+                alert("Error al cargar los carritos. Por favor, intente de nuevo.");
+            }
+        }
+
+        $('buscarBtn').addEventListener('click', async () => {
+            const id = $('buscarCarrito').value.trim();
+            try {
+                const carritoRef = db.collection(id);
+                const snapshot = await carritoRef.get();
+                
+                if (snapshot.empty) {
+                    alert('Carrito no encontrado');
+                    $('carritoInfo').style.display = 'none';
+                    $('montoTotal').textContent = '0.00';
+                    $('cantidadTotal').textContent = '0';
+                    $('buscarCarrito').classList.add('shake');
+                    setTimeout(() => {
+                        $('buscarCarrito').classList.remove('shake');
+                    }, 820);
+                    return;
+                }
+
+                carritoSeleccionado = { id: id, productos: [] };
+                snapshot.forEach(doc => {
+                    carritoSeleccionado.productos.push({ id: doc.id, ...doc.data() });
+                });
+
+                $('carritoInfo').style.display = 'block';
+                $('carritoId').textContent = carritoSeleccionado.id;
+                await mostrarElementosCarrito(carritoSeleccionado);
+                await calcularTotal(carritoSeleccionado);
+            } catch (error) {
+                console.error("Error al buscar el carrito:", error);
+                alert("Error al buscar el carrito. Por favor, intente de nuevo.");
+            }
+        });
+
+        async function mostrarElementosCarrito(carrito) {
+            const elementosDiv = $('elementosCarrito');
+            elementosDiv.innerHTML = '<h6>Elementos del carrito:</h6>';
+            let cantidadTotal = 0;
+            
+            for (const item of carrito.productos) {
+                try {
+                    const productoDoc = await db.collection("productos").doc(item.id).get();
+                    if (productoDoc.exists) {
+                        const producto = productoDoc.data();
+                        cantidadTotal += item.cantidad || 0;
+                        const precio = producto.precio || 0;
+                        const subtotal = ((precio * (item.cantidad || 0)) || 0).toFixed(2);
+                        const productoElement = document.createElement('div');
+                        productoElement.className = 'card mb-2 animate-fadeInUp';
+                        productoElement.innerHTML = `
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="card-title mb-0">${producto.nombre || 'Producto sin nombre'}</h6>
+                                    <span class="badge bg-primary">${item.id || 'Sin código'}</span>
+                                </div>
+                                <div class="mt-2">
+                                    <p class="card-text mb-1">
+                                        Precio unitario: $${precio.toFixed(2)}
+                                        ${producto.oferta ? ` <span class="text-success">(${producto.oferta}% descuento)</span>` : ''}
+                                    </p>
+                                    <p class="card-text mb-1">Cantidad: ${item.cantidad || 0}</p>
+                                    <p class="card-text mb-0"><strong>Subtotal: $${subtotal}</strong></p>
+                                </div>
+                            </div>
+                        `;
+                        elementosDiv.appendChild(productoElement);
+                    } else {
+                        console.error("Producto no encontrado:", item.id);
+                    }
+                } catch (error) {
+                    console.error("Error al obtener información del producto:", error);
+                }
+            }
+            $('cantidadTotal').textContent = cantidadTotal;
+        }
+
+        async function calcularTotal(carrito) {
+            let total = 0;
+            for (const item of carrito.productos) {
+                try {
+                    const productoDoc = await db.collection("productos").doc(item.id).get();
+                    if (productoDoc.exists) {
+                        const producto = productoDoc.data();
+                        const precio = producto.precio || 0;
+                        const cantidad = item.cantidad || 0;
+                        const oferta = producto.oferta || 0;
+                        const precioConDescuento = precio - (precio * oferta / 100);
+                        total += precioConDescuento * cantidad;
+                    }
+                } catch (error) {
+                    console.error("Error al calcular el total:", error);
+                }
+            }
+            montoTotal = total;
+            $('montoTotal').textContent = montoTotal.toFixed(2);
+        }
+
+        $('aplicarDescuentoBtn').addEventListener('click', () => {
+            const descuento = parseFloat($('porcentajeDescuento').value);
+            if (descuento > 0 && descuento <= 100) {
+                montoTotal -= montoTotal * (descuento / 100);
+                $('montoTotal').textContent = montoTotal.toFixed(2);
+                bootstrap.Modal.getInstance($('descuentoModal')).hide();
+            } else {
+                alert("Por favor, ingrese un porcentaje de descuento válido entre 0 y 100.");
+            }
+        });
+
+        $('finalizarBtn').addEventListener('click', async () => {
+            if (!carritoSeleccionado) {
+                alert("Por favor, seleccione un carrito antes de finalizar.");
+                return;
+            }
+
+            if (confirm("¿Está seguro de que desea finalizar esta transacción?")) {
+                try {
+                    const batch = db.batch();
+                    const carritoRef = db.collection(carritoSeleccionado.id);
+                    const snapshot = await carritoRef.get();
+                    snapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+
+                    await db.collection("Transacciones").add({
+                        carritoID: carritoSeleccionado.id,
+                        fecha: new Date(),
+                        cajero: usuarioActual.email,
+                        total: montoTotal,
+                        cantidadProductos: carritoSeleccionado.productos.reduce((acc, prod) => acc + prod.cantidad, 0)
+                    });
+
+                    alert("Transacción finalizada con éxito.");
+                    $('buscarCarrito').value = '';
+                    $('carritoInfo').style.display = 'none';
+                    $('montoTotal').textContent = '0.00';
+                    $('cantidadTotal').textContent = '0';
+                    carritoSeleccionado = null;
+                    montoTotal = 0;
+                    cargarCarritos();
+                } catch (error) {
+                    console.error("Error al finalizar la transacción:", error);
+                    alert("Ocurrió un error al finalizar la transacción.");
+                }
+            }
+        });
+
+        async function cargarHistorialTransacciones() {
+            try {
+                const transaccionesQuery = db.collection("Transacciones").orderBy("fecha", "desc").limit(10);
+                const snapshot = await transaccionesQuery.get();
+                const transacciones = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                
+                const historialDiv = $('historialTransacciones');
+                historialDiv.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID Carrito</th>
+                                    <th>Fecha</th>
+                                    <th>Cajero</th>
+                                    <th>Total</th>
+                                    <th>Cantidad de Productos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${transacciones.map(transaccion => `
+                                    <tr class="animate-fadeInUp">
+                                        <td>${transaccion.carritoID}</td>
+                                        <td>${transaccion.fecha.toDate().toLocaleString()}</td>
+                                        <td>${transaccion.cajero}</td>
+                                        <td>$${transaccion.total.toFixed(2)}</td>
+                                        <td>${transaccion.cantidadProductos || 'N/A'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+            } catch (error) {
+                console.error("Error al cargar el historial de transacciones:", error);
+                alert("Error al cargar el historial de transacciones. Por favor, intente de nuevo.");
+            }
+        }
+
+        async function cargarEstadisticas() {
+            try {
+                const transaccionesSnapshot = await db.collection("Transacciones").get();
+                let ventasTotales = 0;
+                let conteoVentas = 0;
+                let totalProductosVendidos = 0;
+                transaccionesSnapshot.forEach((doc) => {
+                    const transaccion = doc.data();
+                    ventasTotales += transaccion.total;
+                    conteoVentas++;
+                    totalProductosVendidos += transaccion.cantidadProductos || 0;
+                });
+                const ventaPromedio = ventasTotales / conteoVentas;
+                const promedioProductosPorVenta = totalProductosVendidos / conteoVentas;
+
+                $('estadisticasVentas').innerHTML = `
+                    <div class="card animate-fadeInUp">
+                        <div class="card-body">
+                            <h5 class="card-title">Resumen de Ventas</h5>
+                            <p><strong>Ventas Totales:</strong> $${ventasTotales.toFixed(2)}</p>
+                            <p><strong>Número de Ventas:</strong> ${conteoVentas}</p>
+                            <p><strong>Venta Promedio:</strong> $${ventaPromedio.toFixed(2)}</p>
+                            <p><strong>Total de Productos Vendidos:</strong> ${totalProductosVendidos}</p>
+                            <p><strong>Promedio de Productos por Venta:</strong> ${promedioProductosPorVenta.toFixed(2)}</p>
+                        </div>
+                    </div>`;
+            } catch (error) {
+                console.error("Error al cargar las estadísticas:", error);
+                alert("Error al cargar las estadísticas. Por favor, intente de nuevo.");
+            }
+        }
+
+        async function cargarProductos() {
+            try {
+                const snapshot = await db.collection("productos").get();
+                productos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                mostrarProductos();
+            } catch (error) {
+                console.error("Error al cargar los productos:", error);
+                alert("Error al cargar los productos. Por favor, intente de nuevo.");
+            }
+        }
+
+        function mostrarProductos() {
+            const grid = $('productosGrid');
+            grid.innerHTML = '';
+            productos.forEach(producto => {
+                const card = document.createElement('div');
+                card.className = 'col-md-4 mb-3';
+                card.innerHTML = `
+                    <div class="card animate-fadeInUp">
+                        <div class="card-body">
+                            <h5 class="card-title">${producto.nombre || 'Producto sin nombre'}</h5>
+                            <p class="card-text">Precio: $${(producto.precio || 0).toFixed(2)}</p>
+                            <p class="card-text">Oferta: ${producto.oferta ? `${producto.oferta}%` : 'N/A'}</p>
+                            <p class="card-text">Código: ${producto.id || 'Sin código'}</p>
+                            <button class="btn btn-custom btn-sm editarProductoBtn" data-id="${producto.id}">Editar</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            document.querySelectorAll('.editarProductoBtn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const productoId = e.target.getAttribute('data-id');
+                    const producto = productos.find(p => p.id === productoId);
+                    mostrarModalEditarProducto(producto);
+                });
+            });
+        }
+
+        function mostrarModalEditarProducto(producto) {
+            $('editProductoId').value = producto.id;
+            $('editNombre').value = producto.nombre || '';
+            $('editPrecio').value = producto.precio || '';
+            $('editOferta').value = producto.oferta || '';
+            $('editCodigo').value = producto.id || '';
+            new bootstrap.Modal($('editarProductoModal')).show();
+        }
+
+        $('guardarCambiosBtn').addEventListener('click', async () => {
+            const productoId = $('editProductoId').value;
+            const productoActualizado = {
+                nombre: $('editNombre').value,
+                precio: parseFloat($('editPrecio').value) || 0,
+                oferta: parseFloat($('editOferta').value) || null,
+            };
+
+            try {
+                await db.collection("productos").doc(productoId).update(productoActualizado);
+                alert("Producto actualizado con éxito.");
+                bootstrap.Modal.getInstance($('editarProductoModal')).hide();
+                cargarProductos();
+            } catch (error) {
+                console.error("Error al actualizar el producto:", error);
+                alert("Ocurrió un error al actualizar el producto.");
+            }
+        });
+
+        $('modoOscuroBtn').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            $('modoOscuroBtn').textContent = document.body.classList.contains('dark-mode') ? '🌞' : '🌙';
+        });
+
+        $('descuentoBtn').addEventListener('click', () => {
+            new bootstrap.Modal($('descuentoModal')).show();
+        });
+
+        $('perfilBtn').addEventListener('click', () => {
+            new bootstrap.Modal($('perfilModal')).show();
+        });
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                if (e.target.getAttribute('href') === '#historial') {
+                    cargarHistorialTransacciones();
+                } else if (e.target.getAttribute('href') === '#estadisticas') {
+                    cargarEstadisticas();
+                } else if (e.target.getAttribute('href') === '#productos') {
+                    cargarProductos();
+                }
+            });
+        });
+
+        function actualizarMenuPorRol(rol) {
+            const opciones = {
+                Cajero: ['cobro'],
+                Supervisor: ['cobro', 'historial', 'estadisticas'],
+                Gerente: ['cobro', 'historial', 'estadisticas', 'productos']
+            };
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const link = item.querySelector('.nav-link');
+                if (link) {
+                    const href = link.getAttribute('href').replace('#', '');
+                    if (opciones[rol].includes(href)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarCarritos();
+            new bootstrap.Tab(document.querySelector('.nav-link[href="#cobro"]')).show();
+        });
+    </script>
+</body>
+</html>

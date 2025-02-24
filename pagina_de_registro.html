@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coto - Registro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            height: 100%;
+            background: linear-gradient(135deg, #ff9f1a, #ff4b2b);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            width: 400px;
+            max-width: 90%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(45deg);
+            z-index: -1;
+        }
+        h1 {
+            color: #ff4b2b;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input, select {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 50px;
+            background: #f0f0f0;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input:focus, select:focus {
+            outline: none;
+            background: #ffffff;
+            box-shadow: 0 0 10px rgba(255,75,43,0.5);
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 50px;
+            background: #ff4b2b;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background: #ff9f1a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        .error {
+            color: #ff4b2b;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .logo {
+            width: 150px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        .login-link {
+            margin-top: 20px;
+            color: #ff4b2b;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .login-link:hover {
+            color: #ff9f1a;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="COTOLOGO.png" alt="Logo Coto" class="logo">
+        <h1>Regístrate en Coto</h1>
+        <form id="registerForm">
+            <input type="text" id="name" placeholder="Nombre completo" required>
+            <input type="email" id="email" placeholder="Correo electrónico" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <input type="password" id="confirmPassword" placeholder="Confirmar contraseña" required>
+            <select id="role" required>
+                <option value="" disabled selected>Selecciona tu rol asignado</option>
+                <option value="Gerente">Gerente</option>
+                <option value="Cajero">Cajero</option>
+                <option value="Supervisor">Supervisor</option>
+            </select>
+            <button type="submit">Registrarse</button>
+        </form>
+        <p id="error" class="error"></p>
+        <a href="pagina_de_inicio_de_sesion.html" class="login-link">¿Ya tienes cuenta? Inicia sesión aquí</a>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyABlCJSWYwDFEPOM-aN4wbgKT3HF1PVFqc",
+            authDomain: "proyecto-arduino2.firebaseapp.com",
+            databaseURL: "https://proyecto-arduino2-default-rtdb.firebaseio.com",
+            projectId: "proyecto-arduino2",
+            storageBucket: "proyecto-arduino2.appspot.com",
+            messagingSenderId: "790219379077",
+            appId: "1:790219379077:web:2584aa5b00cfa15dbd34ec",
+            measurementId: "G-DS7PPVL470"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        const registerForm = document.getElementById('registerForm');
+        const errorElement = document.getElementById('error');
+
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const role = document.getElementById('role').value;
+
+            if (password !== confirmPassword) {
+                errorElement.textContent = "Las contraseñas no coinciden";
+                return;
+            }
+
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Registro exitoso
+                    const user = userCredential.user;
+                    // Guardar información adicional en Firestore
+                    return firebase.firestore().collection('users').doc(user.uid).set({
+                        name: name,
+                        email: email,
+                        role: role // Se guarda el rol
+                    });
+                })
+                .then(() => {
+                    window.location.href = "pagina_de_inicio_de_sesion.html";
+                })
+                .catch((error) => {
+                    // Error en el registro
+                    errorElement.textContent = error.message;
+                });
+        });
+    </script>
+</body>
+</html>
